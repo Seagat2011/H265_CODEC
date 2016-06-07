@@ -1,0 +1,108 @@
+<html>
+<head>
+<title>WebGL Canvas Demo 4.0.0.0</title>
+<meta charset="utf-8">
+<style>
+a {
+  font-family: cantarell;
+  font-size: 14px; 
+  padding: 20px;
+}
+.canvas_element {
+  width: 1600;//960; 
+  height: 900;//480;
+  float: left; 
+  position: relative;
+  background-color: #202020;
+}
+.c1 {
+  float: left; 
+  position: relative;
+}
+.c2 {
+  z-index: 100; 
+  position: absolute; 
+  bottom: 0px; 
+  background-color: rgba(0,0,0,0.25); 
+  height: 15px; 
+  width: 100%; 
+  text-align: left;
+}
+.c3 {
+  font-size: 10px; 
+  //font-weight: bold;
+  color: #6e6e6e; 
+  height: 15px;
+}
+</style>
+</head>
+<body>
+<br>
+<a style="font-size: 24px;">HTML5 CANVAS</a>
+<br>
+<a>WebGL Demo</a>
+<br><br>
+<a>
+<input id=btnPlay type=button value=Play onclick="play()"/>
+<input id=btnStream type=file />
+</a>
+<br><br>
+<div class=c1>
+<div class=c2>
+<div class=c3>Click canvas to load and play - worker thread - webgl: true - fps <container id=fps_relay>0</container> - <container id=status_text>Ready</container>
+</div>
+</div>
+<img id=canvas00 class=canvas_element /><img id=canvas01 class=canvas_element style="display:none" />
+</div>
+<br><br>
+</body>
+<footer>
+<script type="text/javascript">
+
+// WebGL Steps
+//  Step1: Prepare the canvas and get WebGL context  
+//  Step2: Define the geometry and store it in buffer objects 
+//  Step3: Create and compile Shader programs 
+//  Step4: Associate the shader programs to buffer objects 
+//  Step5: Draw the object (triangle) 
+//
+//  About v04: FPS: 17
+//  + <img>
+var buffer = [
+"Screenshot_2016-05-01_03-02-59.png",
+"Screenshot_2016-04-30_01-10-56.png",
+]
+function _webglcanvas(canvas00,canvas01){
+  var self = this
+  this.idx = 0
+  this._img = [canvas00,canvas01]
+  this._img[0].src = buffer[0]
+  this._img[1].src = buffer[1]
+  /*
+  this._img.prototype.onload = function(){
+    fps_relay.textContent = ((new Date().getTime()-self.elapsed)/2) 
+  }
+  */
+  this.init = function(){
+    self.elapsed = new Date().getTime() 
+    //self._img.src =  "Screenshot_2016-04-30_01-10-56.png"//buffer[new Date().getTime()%2]
+    var idx = (this.idx==0)?1:0//new Date().getTime()%2
+    self._img.map(function(w,i){
+      if(i==idx){
+        w.style.display = "block"
+      }
+      else{
+        w.style.display = "none"
+      }
+      return w
+    })
+    this.idx = idx
+  }
+  setInterval(self.init,1)
+}_webglcanvas.protoype = {}
+webglcanvas = new _webglcanvas(canvas00,canvas01)
+webglcanvas.init()
+
+</script>
+</footer>
+</html>

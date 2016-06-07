@@ -1,0 +1,89 @@
+<html>
+<head>
+<title>H.268 DECODER 1.0.0.0</title>
+<meta charset="utf-8">
+<style>
+canvas {
+  width: 960; 
+  height: 480;
+  float: left; 
+  position: relative;
+  background-color: #202020;
+}
+a {
+  font-family: cantarell;
+  font-size: 14px; 
+  padding: 20px;
+}
+.cclass {
+  z-index: 0; 
+  position: absolute; 
+  bottom: 0px; 
+  font-size: 10px; 
+  font-decoration: bold; 
+  color: #6e6e6e; 
+  background-color: #202020; 
+  text-align: left;
+  padding: 4px 0px 4px 8px; // clockwise from top //
+}
+.c1 {
+  float: left; 
+  position: relative;
+}
+.c2 {
+  z-index: 100; 
+  position: absolute; 
+  bottom: 0px; 
+  background-color: rgba(0,0,0,0.25); 
+  height: 15px; 
+  width: 100%; 
+  text-align: left;
+}
+.c3 {
+  font-size: 10px; 
+  //font-weight: bold; 
+  color: #6e6e6e; 
+  height: 15px;
+}
+</style>
+<!--<script type="text/javascript" src="JS/CODEC/H268_CODEC.js"></script>-->
+<script type="text/javascript" src="JS/ByteStream.js"></script>
+<script type="text/javascript" src="JS/WebGLCanvas.js"></script>
+<script type="text/javascript" src="JS/IInterface_H268.js"></script>
+<script type="text/javascript">
+var movie_canvas
+function load() {
+  var params = {
+    canvas_element : canvas_element,
+    status_window : status,
+    playBTN : btnPlay,
+  }
+  m_canvas = new IInterface_H268( params )
+  //m_canvas.h268_codec.addEventListener("message",m_canvas.acceptNewFrame,"H.268_DEMO.htm")
+}
+function play(e){
+  m_canvas.play(btnStream)
+}
+</script>
+</head>
+<body onload="load()">
+<br>
+<a style="font-size: 24px;">Broadway.js - H.268 Decoding in JavaScript</a>
+<br>
+<a>Browse videos and Play to open</a>
+<br><br>
+<a>
+<input id=btnPlay type=button value=Play onclick="play()"/>
+<input id=btnStream type=file />
+</a>
+<br><br>
+<div class=c1>
+<div class=c2>
+<div class=c3>Click canvas to load and play - worker thread - webgl: true - fps <container id=status>0</container>
+</div>
+</div>
+<canvas id=canvas_element></canvas>
+</div>
+<br><br>
+</body>
+</html>

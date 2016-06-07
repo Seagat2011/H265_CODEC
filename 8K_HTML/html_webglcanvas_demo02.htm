@@ -1,0 +1,283 @@
+<html>
+<head>
+<title>WebGL Canvas Demo 3.0.0.0</title>
+<meta charset="utf-8">
+<style>
+a {
+  font-family: cantarell;
+  font-size: 14px; 
+  padding: 20px;
+}
+#canvas_element {
+  width: 960; 
+  height: 480;
+  float: left; 
+  position: relative;
+  background-color: #202020;
+}
+.c1 {
+  float: left; 
+  position: relative;
+}
+.c2 {
+  z-index: 100; 
+  position: absolute; 
+  bottom: 0px; 
+  background-color: rgba(0,0,0,0.25); 
+  height: 15px; 
+  width: 100%; 
+  text-align: left;
+}
+.c3 {
+  font-size: 10px; 
+  //font-weight: bold;
+  color: #6e6e6e; 
+  height: 15px;
+}
+</style>
+<script src="sylvester.js" type="text/javascript"></script>
+<script src="glUtils.js" type="text/javascript"></script>
+</head>
+<body>
+<br>
+<a style="font-size: 24px;">HTML5 CANVAS</a>
+<br>
+<a>WebGL Demo</a>
+<br><br>
+<a>
+<input id=btnPlay type=button value=Play onclick="play()"/>
+<input id=btnStream type=file />
+</a>
+<br><br>
+<div class=c1>
+<div class=c2>
+<div class=c3>Click canvas to load and play - worker thread - webgl: true - fps <container id=fps_relay>0</container> - <container id=status_text>Ready</container>
+</div>
+</div>
+<canvas id=canvas_element></canvas>
+</div>
+<br><br>
+</body>
+<footer>
+<script type="text/javascript">
+
+var mvMatrix
+function loadIdentity() {
+  mvMatrix = Matrix.I(4);
+}
+function multMatrix(m) {
+  mvMatrix = mvMatrix.x(m);
+}
+function mvTranslate(v) {
+  multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
+}
+function setMatrixUniforms(self) {
+  var gl = self.gl
+  var shaderProgram = self.shaderProgram
+  var pUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+  gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
+  var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+  gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
+}
+// WebGL Steps
+//  Step1: Prepare the canvas and get WebGL context  
+//  Step2: Define the geometry and store it in buffer objects 
+//  Step3: Create and compile Shader programs 
+//  Step4: Associate the shader programs to buffer objects 
+//  Step5: Draw the object (triangle) 
+//
+//  About v03: FPS: 12 (-1)
+//  - var indices
+//  + gl.createTexture()
+//  + new Image()
+//  gl.drawArrays() => gl.drawElements() (more complex shapes can be created)
+function _webglcanvas(canvas){
+  var self = this
+  this.canvas = canvas
+  this.width = canvas.width
+  this.height = canvas.height
+  this.aspectRatio = canvas.width / canvas.height
+  this.gl
+  this.cubeVerticesBuffer
+  this.cubeVerticesTextureCoordBuffer
+  this.cubeVerticesIndexBuffer
+  this.cubeImage
+  this.cubeTexture
+  this.shaderProgram
+  this.vertexPositionAttribute
+  this.textureCoordAttribute
+  this.drawScene = function(){
+    console.log("_webglcanvas::drawScene")
+    var elapsed = new Date().getTime()   
+    var gl = self.gl
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT)
+    // Draw the cube by binding the array buffer to the cube's vertices
+    perspectiveMatrix = makePerspective(21, self.aspectRatio, 0.1, 100.0)  
+    // Set the drawing position to the "identity" point, which is
+    // the center of the scene.
+    loadIdentity()
+    // Now move the drawing position a bit to where we want to start
+    // drawing the square.
+    mvTranslate([-0.0, 0.0,-5.8])
+    // Draw the square by binding the array buffer to the square's vertices
+    // array, setting attributes, and pushing it to GL.
+    gl.bindBuffer(gl.ARRAY_BUFFER, self.cubeVerticesBuffer)
+    gl.vertexAttribPointer(self.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0)
+    gl.bindBuffer(gl.ARRAY_BUFFER, self.squareVerticesColorBuffer)
+    gl.vertexAttribPointer(self.textureCoordAttribute, 4, gl.FLOAT, false, 0, 0)
+    
+    // Draw the square.
+    setMatrixUniforms(self)
+    gl.viewport(0,0,self.width,self.height)
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+    fps_relay.textContent = ((new Date().getTime()-elapsed)/2)
+  }   
+  this.getShader = function(gl,vf){
+    var status = {
+      "shader-vs":function(_gl_){ // vertice-shader
+        return {
+                theSource:  
+                  "attribute vec3 aVertexPosition;"+
+                  "attribute vec4 aVertexColor;"+
+                  "uniform mat4 uMVMatrix;"+
+                  "uniform mat4 uPMatrix;"+
+                  "varying highp vec4 vColor;"+
+                  "void main(void) {"+
+                  "  gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);"+
+                  "  vColor = aVertexColor;"+
+                  "}",
+                shader:_gl_.createShader(_gl_.VERTEX_SHADER),
+                }
+      },
+      "shader-fs":function(_gl_){ // fragment-shader
+        return {
+                theSource:
+                  "varying highp vec4 vColor;"+
+                  "void main(void) {"+
+                  "  gl_FragColor = vColor;"+
+                  "}",
+                shader:_gl_.createShader(_gl_.FRAGMENT_SHADER),
+                }
+      },
+    }
+    try{
+      lval = status[vf](gl)
+      // Send the source to the shader object
+      gl.shaderSource(lval.shader, lval.theSource)
+      // Compile the shader program
+      gl.compileShader(lval.shader)
+      // See if it compiled successfully
+      if (!gl.getShaderParameter(lval.shader, gl.COMPILE_STATUS)) {
+        Error("An error occurred compiling the shaders: " + gl.getShaderInfoLog(lval.shader))
+      }
+    }
+    catch(e){
+      console.log(e)
+    }
+    return lval.shader
+  }
+  this.initShaders = function(){
+    console.log("_webglcanvas::initShaders")
+    var gl = this.gl
+    gl.clearColor(0.12, 0.12, 0.12, 1.0)   // Clear to dark scene, fully opaque
+    gl.clearDepth(1.0)                     // Clear everything
+    gl.enable(gl.DEPTH_TEST)               // Enable depth testing
+    gl.depthFunc(gl.LEQUAL)                // Near things obscure far things
+    var fragmentShader = this.getShader(gl, "shader-fs")
+    var vertexShader   = this.getShader(gl, "shader-vs")
+    // Create the shader program
+    var shaderProgram = gl.createProgram()
+    gl.attachShader(shaderProgram, vertexShader)
+    gl.attachShader(shaderProgram, fragmentShader)
+    gl.linkProgram(shaderProgram)
+    // If creating the shader program failed, alert
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+      Error("Unable to initialize the shader program: " + gl.getProgramInfoLog(shader))
+    }
+    gl.useProgram(shaderProgram)
+    this.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition")
+    this.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord")
+    // point an attribute to curently bound Vector Buffer Object (VBO)
+    // gl.vertexAttribPointer(coord,2,gl.FLOAT,false,0,0)
+    // gl.vertexAttribPointer(coord,2,gl.FLOAT,false,0,0)
+    gl.enableVertexAttribArray(this.vertexPositionAttribute)
+    gl.enableVertexAttribArray(this.textureCoordAttribute)  
+    this.shaderProgram = shaderProgram
+  }
+  this.initBuffers = function(){
+    console.log("_webglcanvas::initBuffers")
+    var gl = this.gl
+    var vertices = [
+      // Front face
+      1.0, 1.0, 0.0,
+     -1.0, 1.0, 0.0,
+      1.0,-1.0, 0.0,
+     -1.0,-1.0, 0.0,
+      ]
+    var textureCoordinates = [
+      // Front
+      1.0,  1.0,  1.0,  1.0,  // white
+      1.0,  0.0,  0.0,  1.0,  // red
+      0.0,  1.0,  0.0,  1.0,  // green
+      0.0,  0.0,  1.0,  1.0,  // blue
+      ]
+    /*
+    var cubeVertexIndices = [
+      0,  1,  2,      0,  2,  3,    // front
+    ]
+    */
+    var cubeVerticesBuffer = gl.createBuffer()
+    var cubeVerticesColor = gl.createBuffer()
+    //var cubeVerticesIndexBuffer = gl.createBuffer()
+    //var cubeVerticesTextureCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesColor)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates),gl.STATIC_DRAW)
+    //gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesTextureCoordBuffer)
+    //gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(textureCoordinates), gl.STATIC_DRAW)
+    //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer)
+    //gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW)
+    
+    this.cubeVerticesBuffer = cubeVerticesBuffer
+    //this.cubeVerticesTextureCoordBuffer = cubeVerticesTextureCoordBuffer
+    //this.cubeVerticesIndexBuffer = cubeVerticesIndexBuffer  
+    this.cubeVerticesColor = cubeVerticesColor
+  }
+  this.handleTextureLoaded = function(image,texture){
+    console.log("_webglcanvas::handleTextureLoaded")
+    var gl = this.gl
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST)
+    gl.generateMipmap(gl.TEXTURE_2D)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+  }
+  this.initTextures = function(){
+    console.log("_webglcanvas::initTextures")
+    var gl = this.gl
+    var cubeTexture = gl.createTexture()
+    var cubeImage = new Image()
+    cubeImage.onload = function() { self.handleTextureLoaded(cubeImage, cubeTexture) }
+    cubeImage.src = "Screenshot_2016-04-30_01-10-56.png"
+    this.cubeTexture = cubeTexture
+    this.cubeImage = cubeImage
+  }
+  this.init = function(){
+    console.log("_webglcanvas::init")
+    this.gl = canvas_element.getContext('experimental-webgl')
+    if(this.gl){
+      this.initShaders()
+      this.initBuffers()
+      //this.initTextures()
+      setInterval(self.drawScene,1)
+    }
+  }
+}_webglcanvas.protoype = {}
+webglcanvas = new _webglcanvas(canvas_element)
+webglcanvas.init()
+
+</script>
+</footer>
+</html>

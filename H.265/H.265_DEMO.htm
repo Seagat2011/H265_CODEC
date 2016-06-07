@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>H.265 DECODER Demo 1.0.0.0</title>
+<meta charset="utf-8">
+<style type="text/css">
+body, button {
+    font: 13px Helvetica, arial, freesans, clean, sans-serif;
+}
+a:link {
+    text-decoration: none;
+}
+a:visited {
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+a:active {
+    text-decoration: none;
+}
+a {
+    color: #00a;
+}
+</style>
+<script type="text/javascript" src="Decoder.00"></script>
+<script type="text/javascript" src="libde265.js"></script>
+<script>
+var player
+var VIDEO_URL = false
+window.onload = function(){
+    var video = document.getElementById("video")
+    var status = document.getElementById("status")
+    var playback = function(event) {
+        VIDEO_URL = btnStream.files[0].name
+        event.preventDefault()
+        if(player) {
+            player.stop(VIDEO_URL)
+        }
+        else{
+          if(player == undefined){
+            console.log("Initializing libde265", libde265.de265_get_version(),"decoder")
+            player = new libde265.RawPlayer(video)
+            player.set_status_callback(function(msg, fps) {
+                player.disable_filters(true)
+                var banner = {
+                  "loading" : "Loading movie...",
+                  "initializing" : "Loading movie...",
+                  "playing" : "Playing...",
+                  "stopped" : "Paused / Stopped",
+                  "fps" : Number(fps).toFixed(3) + " fps"
+                }
+                status.innerHTML = banner[msg] || msg
+              })          
+          }
+          player.playback(VIDEO_URL)
+        }
+    }
+    var button = document.getElementById("play")
+    if (button.addEventListener) {
+        button.addEventListener("click", playback, false)
+    }
+    else
+    if (button.attachEvent){
+        button.attachEvent('onclick', playback)
+    }
+}
+</script>
+<body>
+<h1>H.265 DEMO.js</h1>
+<div>
+<div>Simple HEVC/H.265 bitstream player in pure JavaScript</div>
+<div>
+<canvas id="video" style="width : 640px; height : 360px; background-color:#202020;"></canvas><br>
+<small>Copyright &copy; 2014 by struktur AG</small><br>
+<small>Copyright &copy; 2016 by Seagat2011</small><br><br>
+<span id="status"></span><br><br>
+<button id="play">Play</button>
+<input id=btnStream type=file />
+</div>
+</body>
+</html>

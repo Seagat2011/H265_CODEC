@@ -1,0 +1,361 @@
+<html xmlns="http://www.w3.org/1999/xhtml" hasBrowserHandlers="true">
+<head>
+<title>Test HTML5 Canvas 1.0.0.0</title>
+<meta charset="utf-8">
+<style>
+canvas {
+  width : 760px; // 1600px;
+  height : 380px; // 900px;
+  background-color : #202020;
+}
+textarea {
+  width : 73%; 
+  height : 83%; 
+  overflow : auto;
+  font-style : monospace;
+  font-size : 10pt;
+  font-color : #808080;
+}
+
+</style>
+<script>
+
+var charSet = {}
+
+"1234567890`~!@#$%^&*()-_=+\\;:'\"|,<.>/?{}[]abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\t\n "
+.split("")
+.map(function(w){
+  charSet[w.charCodeAt()] = w
+})
+
+Object.prototype.toHex = function(){
+  return this < 16 ? '0'+this.toString( 16 ) : this.toString( 16 )
+}
+function g_do_convert_yuv420(y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, dest) {
+    var yval
+    var uval
+    var vval
+    var xpos = 0
+    var ypos = 0
+    var w2 = w >> 1
+    var maxi = w2*h
+    var yoffset = 0
+    var uoffset = 0
+    var voffset = 0
+    var x2
+    var i2
+    for (var i=0; i<maxi; i++) {
+        i2 = i << 1
+        x2 = (xpos << 1)
+        yval = 1.164 * (y[yoffset + x2] - 16)
+        uval = u[uoffset + xpos] - 128
+        vval = v[voffset + xpos] - 128
+        dest[(i2<<2)+0] = yval + 1.596 * vval
+        dest[(i2<<2)+1] = yval - 0.813 * vval - 0.391 * uval
+        dest[(i2<<2)+2] = yval + 2.018 * uval
+        dest[(i2<<2)+3] = 0xff
+        yval = 1.164 * (y[yoffset + x2 + 1] - 16)
+        dest[((i2+1)<<2)+0] = yval + 1.596 * vval
+        dest[((i2+1)<<2)+1] = yval - 0.813 * vval - 0.391 * uval
+        dest[((i2+1)<<2)+2] = yval + 2.018 * uval
+        dest[((i2+1)<<2)+3] = 0xff
+        xpos++
+        if (xpos === w2) {
+            xpos = 0
+            ypos++
+            yoffset += stridey
+            uoffset = ((ypos >> 1) * strideu)
+            voffset = ((ypos >> 1) * stridev)
+        }
+    }
+}
+function g_do_convert_yuv420(y, u, v, w, h, stridey, strideu, stridev, dest) {
+    var yval
+    var uval
+    var vval
+    var xpos = 0
+    var ypos = 0
+    var w2 = w >> 1
+    var maxi = w2 * h
+    var yoffset = 0
+    var uoffset = 0
+    var voffset = 0
+    var x2
+    var i2
+    for (var i=0; i<maxi; i++) {
+        i2 = i << 1
+        x2 = (xpos << 1)
+        yval = 1.164 * (y[yoffset + x2] - 16)
+        uval = u[uoffset + xpos] - 128
+        vval = v[voffset + xpos] - 128
+        dest[(i2<<2)+0] = yval + 1.596 * vval
+        dest[(i2<<2)+1] = yval - 0.813 * vval - 0.391 * uval
+        dest[(i2<<2)+2] = yval + 2.018 * uval
+        dest[(i2<<2)+3] = 0xff
+        yval = 1.164 * (y[yoffset + x2 + 1] - 16)
+        dest[((i2+1)<<2)+0] = yval + 1.596 * vval
+        dest[((i2+1)<<2)+1] = yval - 0.813 * vval - 0.391 * uval
+        dest[((i2+1)<<2)+2] = yval + 2.018 * uval
+        dest[((i2+1)<<2)+3] = 0xff
+        xpos++
+        if (xpos === w2) {
+            xpos = 0
+            ypos++
+            yoffset += stridey
+            uoffset = ((ypos >> 1) * strideu)
+            voffset = ((ypos >> 1) * stridev)
+        }
+    }
+}
+function ByteStream(canvas,lstatus){
+  var self = this
+  this.url = ""
+  this.byteStream = 0x00
+  this.canvas = canvas
+  this.status_window = lstatus
+  this.byteScroll_pixelTop = 0
+  this.byteScrollTop = 1600*900//*3
+  this.callback = function(){
+    try{
+      if(self.byteStream.byteLength){// && ((self.byteScroll_pixelTop+self.byteScrollTop) in self.byteStream)){
+      /*
+        var gl = self.canvas.getContext('experimental-webgl')
+        gl.viewport(0, 0, 1600, 900)
+        var bytesPerRow = 1600 * 3//4
+        var rowCnt = 900
+        var texturePosBuffer = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, texturePosBuffer)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 0, 0, 0, 1, 1, 0, 1]), gl.STATIC_DRAW)
+        var tTop = 0
+        var tLeft = 0
+        var tBottom = 1600 / 900
+        var tRight = 1600 / bytesPerRow
+        var texturePosValues = new Float32Array([tRight, tTop, tLeft, tTop, tRight, tBottom, tLeft, tBottom])
+        var vertexShaderScript = [
+          'attribute vec4 vertexPos;',
+          'attribute vec4 texturePos;',
+          'varying vec2 textureCoord;',
+          'void main()',
+          '{',
+          '  gl_Position = vertexPos;',
+          '  textureCoord = texturePos.xy;',
+          '}',
+        ].join('\n')
+        var fragmentShaderScript = [
+          'precision highp float;',
+          'varying highp vec2 textureCoord;',
+          'uniform sampler2D sampler;',
+          'uniform highp vec2 resolution;',
+          'uniform mat4 YUV2RGB;',
+          'void main(void) {',
+          '  highp float texPixX = 1.0 / resolution.x;',
+          '  highp float logPixX = 2.0 / resolution.x;',      
+          '  highp float logHalfPixX = 4.0 / resolution.x;', 
+          '  highp float steps = floor(textureCoord.x / logPixX);',
+          '  highp float uvSteps = floor(textureCoord.x / logHalfPixX);',
+          '  highp float y = texture2D(sampler, vec2((logPixX * steps) + texPixX, textureCoord.y)).r;',
+          '  highp float u = texture2D(sampler, vec2((logHalfPixX * uvSteps), textureCoord.y)).r;',
+          '  highp float v = texture2D(sampler, vec2((logHalfPixX * uvSteps) + texPixX + texPixX, textureCoord.y)).r;',
+          '  gl_FragColor = vec4(y, u, v, 1.0) * YUV2RGB;',
+          '}',
+        ].join('\n')
+        var vertexShader = gl.createShader(gl.VERTEX_SHADER)
+        gl.shaderSource(vertexShader, vertexShaderScript)
+        gl.compileShader(vertexShader)
+        var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
+        gl.shaderSource(fragmentShader, fragmentShaderScript)
+        gl.compileShader(fragmentShader)
+        var program = gl.createProgram()
+        gl.attachShader(program, vertexShader)
+        gl.attachShader(program, fragmentShader)
+        gl.linkProgram(program)
+        gl.useProgram(program)
+        self.shaderProgram = program
+        var textureRef = self.initTexture = function(){
+          var texref = gl.createTexture()
+          gl.bindTexture(gl.TEXTURE_2D, texref)
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+          gl.bindTexture(gl.TEXTURE_2D, null)
+          return texref
+        }
+        var samplerRef = gl.getUniformLocation(program, 'sampler')
+        gl.uniform1i(samplerRef, 0)
+        this.textureRef = textureRef
+        
+        var k = 0
+        var img = new Uint8Array(1600*900*4).map(function(w,i){ // convert RGB => RGBA
+          if((i+1)%4){
+            w = self.byteStream[i+k]
+          }
+          else{
+            k--
+            w = 255
+          }
+          return w
+        })
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, texturePosBuffer)
+        gl.bufferData(gl.ARRAY_BUFFER, texturePosValues, gl.DYNAMIC_DRAW)
+        gl.uniform2f(gl.getUniformLocation(self.shaderProgram, 'resolution'), bytesPerRow, rowCnt)
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, textureRef)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, bytesPerRow, rowCnt, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, self.byteStream)
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+      */
+        /*
+        var k = 0
+        idata.data = new Uint8ClampedArray(1600*900*4).map(function(w,i){ // convert RGB => RGBA
+          if((i+1)%4){
+            w = self.byteStream[i+k]
+          }
+          else{
+            k--
+            w = 255
+          }
+          return w
+        })
+        */
+        //idata.data = new Uint8ClampedArray(self.byteStream.slice(0,self.byteStream.byteLength))
+        //idata.data.map(function(w){ return 255 }) // new Uint8ClampedArray(1600*900*4+3).map(function(w,i){ return (i+1)%4?255:0 })
+        //gl.putImageData(idata,0,0)
+      /*
+        var gl = self.canvas.getContext('2d')
+        ctx.putImageData(new Uint8Array(
+          self.byteStream.slice(
+            self.byteScroll_pixelTop,
+            self.byteScroll_pixelTop+
+            self.byteScrollTop)),
+            0,0)
+            //self.byteScroll_pixelTop+=self.byteScrollTop
+      */
+        var k = 0
+        var gl = self.canvas.getContext('2d')
+        var idata = gl.createImageData(1600,900)
+        idata.data = new Uint8ClampedArray(1600*900*4).map(function(w,i){ // RGB => RGBA
+          if((i+1)%4){
+            w = self.byteStream[i+k]
+          }
+          else{
+            k--
+            w = 255
+          }
+          return w
+        })
+        gl.putImageData(idata,0,0)
+      }
+    }
+    catch(e){
+      console.log(e)
+    }
+  }
+  setInterval(this.callback,1)
+}ByteStream.prototype = {}
+
+ByteStream.prototype.__byteStream__ = function (putget){
+  var xhr = new XMLHttpRequest()
+  var async = true
+  xhr.open(putget,this.url,async)
+  xhr.responseType = "arraybuffer"
+  var self = this
+  xhr.onreadystatechange = function(e){
+    var banner = [
+      function(){
+        return "Processing file..." // 0 UNSENT
+        }, 
+      function(){
+        return "Opening file..."    // 1 OPENED
+        },
+      function(){
+        return "Initializing..."    // 2 HEADERS_RECEIVED
+        },
+      function(v){
+        var status = {
+          PUT:function(){
+            return "Saving file..."
+            },
+          GET:function(){
+            return "Loading file..."
+            },
+          default:function(w){
+            var msg = {
+              PUT:"LOAD",
+              GET:"SAVE",
+              }
+            return Error("Unable to complete "+msg[v]+" file operation.")
+            },
+        }
+        return status[v]() || status.default(v)    // 3 LOADING
+        },
+      function(){ 
+        self.byteStream = new Uint8Array( xhr.response )
+        return "Ready"  // 4 DONE
+        },              
+    ]
+    self.status_window.innerHTML = banner [ xhr.readyState ] (putget) || Error("Error parsing bitstream - Please try again.")
+  }
+  xhr.send()
+}
+
+ByteStream.prototype.openDumpStream = function (w){
+  try{
+    this.url = w.name
+    this.__byteStream__('GET')
+  } 
+  catch(e){
+    console.log(e)
+  }
+}
+
+ByteStream.prototype.saveDumpStream = function (){
+  try{
+    this.__byteStream__('PUT')
+  } 
+  catch(e){
+    console.log(e)
+  }
+}
+
+</script>
+</head>
+<br>
+<input id=btnStream type=file /><br>
+<br>
+<div>
+<input id=btnDump type=button value="Play" />  <input id=btnClear type=button value="clear source window"/> 
+<div id=loadstatus style="float : right"> Ready</div>
+</div>
+<br>
+<div>
+<canvas id=byteresult></canvas>
+</div>
+<input id=btnSave type=button value="Save file" />
+<footer>
+
+<script>
+
+var __file__ = new ByteStream(byteresult,loadstatus)
+ 
+input:onclick = function(e){
+  var __status__ = {
+    "btnDump" : function(){
+        __file__.openDumpStream(btnStream.files[0])
+        },
+    "btnSave" : function(){
+        __file__.saveDumpStream()
+        },
+    "btnClear" : function(){
+        //byteresult.value = ''
+        },
+  }
+  if(__status__[e.target.id]){
+    __status__[e.target.id]()
+  }
+}
+
+</script>
+
+</footer>
+</html>

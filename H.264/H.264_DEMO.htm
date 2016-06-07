@@ -1,0 +1,30 @@
+<html>
+<head>
+<title>H.264 DECODER Demo 1.0.0.0</title>
+<meta charset="utf-8">
+<link type="text/css" href="screen.css" rel="stylesheet" />
+</head>
+<body onload="load()">
+  <script type="text/javascript" src="YUVCanvas.js"></script>
+  <script type="text/javascript" src="Player.js"></script>
+  <script type="text/javascript" src="stream.js"></script>
+  <script type="text/javascript" src="mp4.js"></script>
+  <script type="text/javascript">
+    var movie_canvas
+    function load() {
+      movie_canvas = new Broadway(file_attributes)
+    }
+    function play(e){
+      movie_canvas.play(btnStream.files[0])
+      btnPlay.value = movie_canvas.player.isPaused ? "Play" : "Pause"
+    }
+  </script>
+  <br>
+  <a style="font-size: 24px; padding: 20px">Broadway.js - H.264 Decoding in JavaScript w/ asm.js</a>
+  <br>
+  <a style="font-size: 14px; padding: 20px">Browse videos and Play to open</a><br><br>
+  <div id=file_attributes class="broadway" src="mozilla_story.mp4" width="640" height="360" style="float: left; position: relative;" workers="true" render="true" webgl="auto"></div><br><br>
+  <input id=btnPlay type=button value=Play onclick="play()"/> <br><br>
+  <input id=btnStream type=file />
+</body>
+</html>

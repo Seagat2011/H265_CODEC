@@ -1,0 +1,223 @@
+<html>
+<head>
+<title>WebGL Canvas Demo 4.0.0.0</title>
+<meta charset="utf-8">
+<style>
+a {
+  font-family: cantarell;
+  font-size: 14px; 
+  padding: 20px;
+}
+.canvas_element {
+  width: 960;//1600;//960; 
+  height: 480;//900;//480;
+  float: left; 
+  position: relative;
+  background-color: #202020;
+}
+.c1 {
+  float: left; 
+  position: relative;
+}
+.c2 {
+  z-index: 100; 
+  position: absolute; 
+  bottom: 0px; 
+  background-color: rgba(0,0,0,0.25); 
+  height: 15px; 
+  width: 100%; 
+  text-align: left;
+}
+.c3 {
+  font-size: 10px; 
+  font-weight: bold;
+  color: #6e6e6e; 
+  height: 15px;
+}
+</style>
+</head>
+<body>
+<br>
+<a style="font-size: 24px;">HTML5 CANVAS</a>
+<br>
+<a>WebGL Demo</a>
+<br><br>
+<a>
+<input id=btnPlay type=button value=Play onclick="play()"/>
+<input id=btnStream type=file />
+</a>
+<br><br>
+<div class=c1>
+<div class=c2>
+<div class=c3>Click canvas to load and play - worker thread - webgl: true - fps <container id=fps_relay>0</container> - <container id=status_text>Ready</container>
+</div>
+</div>
+<img id=canvas00 class=canvas_element />
+<img id=canvas01 class=canvas_element style="display:none" />
+<img id=canvas02 class=canvas_element style="display:none" />
+<img id=canvas03 class=canvas_element style="display:none" />
+<img id=canvas04 class=canvas_element style="display:none" />
+<img id=canvas05 class=canvas_element style="display:none" />
+<img id=canvas06 class=canvas_element style="display:none" />
+<img id=canvas07 class=canvas_element style="display:none" />
+</div>
+<br><br>
+</body>
+<footer>
+<script type="text/javascript">
+
+// WebGL Steps
+//  Step1: Prepare the canvas and get WebGL context  
+//  Step2: Define the geometry and store it in buffer objects 
+//  Step3: Create and compile Shader programs 
+//  Step4: Associate the shader programs to buffer objects 
+//  Step5: Draw the object (triangle) 
+//
+//  About v04: FPS: 17
+//  + <img>
+var buffer = [
+"100B0730.JPG",
+"100B0731.JPG",
+"100B0732.JPG",
+"100B0733.JPG",
+"100B0734.JPG",
+"100B0735.JPG",
+"100B0736.JPG",
+"100B0737.JPG",
+"100B0738.JPG",
+"100B0739.JPG",
+"100B0740.JPG",
+"100B0741.JPG",
+"100B0742.JPG",
+"100B0743.JPG",
+"100B0744.JPG",
+"100B0745.JPG",
+"100B0746.JPG",
+"100B0747.JPG",
+"100B0748.JPG",
+"100B0749.JPG",
+"100B0750.JPG",
+"100B0751.JPG",
+"100B0752.JPG",
+"100B0753.JPG",
+"100B0754.JPG",
+"100B0755.JPG",
+"100B0756.JPG",
+"100B0757.JPG",
+"100B0758.JPG",
+"100B0759.JPG",
+"100B0760.JPG",
+"100B0761.JPG",
+"100B0762.JPG",
+"100B0763.JPG",
+"100B0764.JPG",
+"100B0765.JPG",
+"100B0766.JPG",
+"100B0767.JPG",
+"100B0768.JPG",
+"100B0769.JPG",
+"100B0770.JPG",
+"100B0771.JPG",
+"100B0772.JPG",
+"100B0773.JPG",
+"100B0774.JPG",
+"100B0775.JPG",
+"100B0776.JPG",
+"100B0777.JPG",
+"100B0778.JPG",
+"100B0779.JPG",
+"100B0780.JPG",
+"100B0781.JPG",
+"100B0782.JPG",
+"100B0783.JPG",
+"100B0784.JPG",
+"100B0785.JPG",
+"100B0786.JPG",
+"100B0787.JPG",
+"100B0788.JPG",
+"100B0789.JPG",
+"100B0790.JPG",
+"100B0791.JPG",
+"100B0792.JPG",
+"100B0793.JPG",
+"100B0794.JPG",
+"100B0795.JPG",
+"100B0796.JPG",
+"100B0797.JPG",
+"100B0798.JPG",
+"100B0799.JPG",
+"100B0800.JPG",
+"100B0801.JPG",
+"100B0802.JPG",
+"100B0803.JPG",
+"100B0804.JPG",
+"100B0805.JPG",
+"100B0806.JPG",
+"100B0807.JPG",
+"100B0808.JPG",
+"100B0809.JPG",
+"100B0810.JPG",
+"100B0811.JPG",
+"100B0812.JPG",
+"100B0813.JPG",
+"100B0814.JPG",
+"100B0815.JPG",
+"100B0816.JPG",
+"100B0817.JPG",
+"100B0818.JPG",
+"100B0819.JPG",
+"100B0820.JPG",
+"100B0821.JPG",
+"100B0822.JPG",
+"100B0823.JPG",
+"100B0824.JPG",
+"100B0825.JPG",
+"100B0826.JPG",
+"100B0827.JPG",
+"100B0828.JPG",
+"100B0829.JPG",
+]
+function _onload(){
+  fps_relay.textContent = ((new Date().getTime()-this.elapsed)/2) 
+}
+function _webglcanvas(canvas00,canvas01){
+  var self = this
+  this.idx = 0
+  this.idxMAX = 8
+  this.frame = 1
+  this.frameMAX = buffer.length
+  this._img = [canvas00,canvas01,canvas02,canvas03,canvas04,canvas05,canvas06,canvas07,]
+  
+  this._img[0].src = buffer[0]
+  this._img.map(function(w,i){
+    w.src = buffer[i]
+    w.addEventListener("load",_onload,1)
+    return w
+  })
+  this._img.elapsed = 0
+  this.init = function(){
+    self.elapsed
+    var idx = (self.idx<self.idxMAX)?self.idx:0
+    self._img.map(function(w,i){
+      if(i==idx){
+        w.style.display = "block"
+      }
+      else{
+        w.style.display = "none"
+        w.elapsed = new Date().getTime() 
+        var frame = (self.frame>=self.frameMAX)?0:self.frame
+        w.src = buffer[frame]
+        self.frame = ++frame
+      }
+      return w
+    })
+    self.idx = ++idx
+  }
+  setInterval(self.init,100)
+}_webglcanvas.protoype = {}
+webglcanvas = new _webglcanvas(canvas00,canvas01)
+webglcanvas.init()
+
+</script>
+</footer>
+</html>
